@@ -41,6 +41,12 @@ vim.api.nvim_create_autocmd("ColorScheme", {
   end,
 })
 --]]
+vim.api.nvim_create_autocmd("TermOpen", {
+  callback = function()
+    vim.api.nvim_set_hl(0, "TermNormal", { bg = "#000000" })
+    vim.opt_local.winhighlight = "Normal:TermNormal,NormalNC:TermNormal"
+  end,
+})
 
 --------------------------------------------------------------------------------
 -- 2. BOOTSTRAP LAZY.NVIM (plugin management)
