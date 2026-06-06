@@ -46,7 +46,7 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 -- 2. BOOTSTRAP LAZY.NVIM (plugin management)
 --------------------------------------------------------------------------------
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
   vim.fn.system({
     "git", "clone", "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
@@ -59,7 +59,18 @@ vim.opt.rtp:prepend(lazypath)
 -- 3. PLUGINS
 --------------------------------------------------------------------------------
 require("lazy").setup({
-
+  -- Neo-Tree
+  {
+    "nvim-neo-tree/neo-tree.nvim",
+    branch = "v3.x",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "MunifTanjim/nui.nvim",
+      "nvim-tree/nvim-web-devicons", -- optional, but recommended
+      keys = { { "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Explorador" } },
+    },
+    lazy = false, -- neo-tree will lazily load itself
+  },
   -- Theme
   {
     "catppuccin/nvim",
@@ -74,29 +85,25 @@ require("lazy").setup({
   -- Treesitter: syntax highlighting
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "main",
+    lazy = false,
     build = ":TSUpdate",
     config = function()
-      require("nvim-treesitter").setup({
-        ensure_installed = {
-          "racket",
-          "haskell",
-          "lua",
-          "markdown",
-          "gdscript",
-          "godot_resource",
-          "gdshader",
-          "javascript",
-          "typescript",
-          "tsx",
-          "jsx",
-          "html",
-          "css",
-          "json",
-          "clojure",
-        },
+      require("nvim-treesitter").install({
+        "racket", "haskell", "lua",
+        "markdown", "markdown_inline",
+        "gdscript", "godot_resource", "gdshader",
+        "javascript", "typescript", "tsx",
+        "html", "css", "json", "clojure",
+      })
+      vim.api.nvim_create_autocmd("FileType", {
+        callback = function(args)
+          pcall(vim.treesitter.start, args.buf)
+        end,
       })
     end,
   },
+
   -- LSP
   {
     "williamboman/mason.nvim",
@@ -196,8 +203,8 @@ require("lazy").setup({
           map("<leader>ca", vim.lsp.buf.code_action, "Code action")
           map("<leader>rn", vim.lsp.buf.rename, "Renombrar símbolo")
           map("<leader>d", vim.diagnostic.open_float, "Ver diagnóstico")
-          map("[d", vim.diagnostic.goto_prev, "Diagnóstico anterior")
-          map("]d", vim.diagnostic.goto_next, "Diagnóstico siguiente")
+          map("[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, "Last diagnostic")
+          map("]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, "Next diagnostic")
         end,
       })
     end,
@@ -259,6 +266,7 @@ require("lazy").setup({
     "nvim-telescope/telescope.nvim",
     branch = "0.1.x",
     dependencies = { "nvim-lua/plenary.nvim" },
+    opts = { defaults = { preview = { treesitter = false } } },
     keys = {
       { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Buscar archivos" },
       { "<leader>fg", "<cmd>Telescope live_grep<cr>",  desc = "Grep en proyecto" },
@@ -266,7 +274,6 @@ require("lazy").setup({
       { "<leader>fh", "<cmd>Telescope help_tags<cr>",  desc = "Buscar en ayuda" },
     },
   },
-
   -- Floating terminal
   {
     "akinsho/toggleterm.nvim",
