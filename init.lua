@@ -32,15 +32,6 @@ opt.guicursor = {
 }
 
 -- Vim API
--- This should change the blinking cursor colors, but seems its not working for now.
---[[
-vim.api.nvim_create_autocmd("ColorScheme", {
-  callback = function()
-    vim.api.nvim_set_hl(0, "Cursor", { fg = "#1e1e2e", bg = "#cdd6f4" })
-    vim.api.nvim_set_hl(0, "lCursor", { fg = "#1e1e2e", bg = "#cdd6f4" })
-  end,
-})
---]]
 vim.api.nvim_create_autocmd("TermOpen", {
   callback = function()
     vim.api.nvim_set_hl(0, "TermNormal", { bg = "#000000" })
@@ -79,13 +70,22 @@ require("lazy").setup({
   },
   -- Theme
   {
-    "catppuccin/nvim",
-    name = "catppuccin",
+    "bluz71/vim-moonfly-colors",
+    name = "moonfly",
+    lazy = false,
     priority = 1000,
     config = function()
-      require("catppuccin").setup({ flavour = "mocha" })
-      vim.cmd.colorscheme("catppuccin")
+      vim.cmd.colorscheme("moonfly")
     end,
+  },
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    priority = 1000
+    -- config = function()
+    -- require("catppuccin").setup({ flavour = "mocha" })
+    --vim.cmd.colorscheme("catppuccin")
+    -- end,
   },
 
   -- Treesitter: syntax highlighting
@@ -188,13 +188,22 @@ require("lazy").setup({
           },
         },
       })
+      -- TypeScript/JavaScript
+      vim.lsp.config("ts_ls", {
+        capabilities = capabilities,
+      })
 
+      vim.lsp.config("eslint", {
+        capabilities = capabilities,
+      })
       vim.lsp.enable({
         "hls",
         "lua_ls",
         "gdscript",
         "clojure_lsp",
-        "racket_langserver"
+        "racket_langserver",
+        "ts_ls",
+        "eslint",
       })
 
       -- Keymaps LSP
@@ -285,9 +294,13 @@ require("lazy").setup({
     "akinsho/toggleterm.nvim",
     version = "*",
     opts = {
-      open_mapping = [[<c-\>]],
+      open_mapping = [[<C-t>]],
       direction = "float",
-      float_opts = { border = "curved" },
+      float_opts = {
+        border = "curved",
+        width = function() return math.floor(vim.o.columns * 0.9) end,
+        height = function() return math.floor(vim.o.lines * 0.85) end,
+      },
     },
   },
 
