@@ -212,6 +212,7 @@ require("lazy").setup({
     name = "vague",
     lazy = false,    -- carga en el arranque
     priority = 1000, -- carga antes que otros plugins
+    --[[
     config = function()
       require("vague").setup({
         -- todo opcional; estos son los defaults
@@ -221,17 +222,16 @@ require("lazy").setup({
       })
       vim.cmd.colorscheme("vague")
     end,
+  ]] --
   },
   {
     "bluz71/vim-moonfly-colors",
     name = "moonfly",
     lazy = false,
     priority = 1000,
-    --[[
     config = function()
       vim.cmd.colorscheme("moonfly")
     end,
-    --]]
   },
   {
     "catppuccin/nvim",
