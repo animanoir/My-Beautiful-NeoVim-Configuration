@@ -56,6 +56,144 @@ vim.opt.rtp:prepend(lazypath)
 -- 3. PLUGINS
 --------------------------------------------------------------------------------
 require("lazy").setup({
+  -- which.key:
+  {
+    "folke/which-key.nvim",
+    event = "VeryLazy",
+    config = function()
+      local wk = require("which-key")
+
+      wk.setup({
+        delay = 400, -- ms antes de que aparezca el popup
+      })
+
+      -- Nombra los grupos de prefijos que ya tienes
+      wk.add({
+        { "<leader>f", group = "Search" },
+        { "<leader>h", group = "Git" },
+        { "<leader>m", group = "Fun" },
+        { "<leader>c", group = "Code (LSP)" },
+        { "<leader>r", group = "Run / Rename" },
+      })
+    end,
+  },
+  -- cellular-automaton:
+  {
+    "eandrju/cellular-automaton.nvim",
+    cmd = "CellularAutomaton",
+    keys = {
+      { "<leader>mr", "<cmd>CellularAutomaton make_it_rain<cr>", desc = "Make it rain" },
+      { "<leader>ml", "<cmd>CellularAutomaton game_of_life<cr>", desc = "Game of Life" },
+    },
+  },
+  -- gitsigns:
+  {
+    "lewis6991/gitsigns.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    opts = {
+      signs = {
+        add          = { text = "│" },
+        change       = { text = "│" },
+        delete       = { text = "_" },
+        topdelete    = { text = "‾" },
+        changedelete = { text = "~" },
+        untracked    = { text = "┆" },
+      },
+      on_attach = function(bufnr)
+        local gs = require("gitsigns")
+
+        local function map(mode, l, r, desc)
+          vim.keymap.set(mode, l, r, { buffer = bufnr, desc = desc })
+        end
+
+        -- Navegar entre hunks
+        map("n", "]h", function()
+          if vim.wo.diff then
+            vim.cmd.normal({ "]c", bang = true })
+          else
+            gs.next_hunk()
+          end
+        end, "Next hunk")
+
+        map("n", "[h", function()
+          if vim.wo.diff then
+            vim.cmd.normal({ "[c", bang = true })
+          else
+            gs.prev_hunk()
+          end
+        end, "Prev hunk")
+
+        -- Acciones sobre hunks
+        map("n", "<leader>hs", gs.stage_hunk, "Stage hunk")
+        map("n", "<leader>hr", gs.reset_hunk, "Reset hunk")
+        map("n", "<leader>hu", gs.undo_stage_hunk, "Undo stage hunk")
+        map("n", "<leader>hS", gs.stage_buffer, "Stage buffer completo")
+        map("n", "<leader>hR", gs.reset_buffer, "Reset buffer completo")
+
+        -- Visual: stagear/resetear solo líneas seleccionadas
+        map("v", "<leader>hs", function()
+          gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+        end, "Stage hunk (visual)")
+        map("v", "<leader>hr", function()
+          gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+        end, "Reset hunk (visual)")
+
+        -- Inspección
+        map("n", "<leader>hp", gs.preview_hunk, "Preview hunk")
+        map("n", "<leader>hb", function()
+          gs.blame_line({ full = true })
+        end, "Blame línea completa")
+        map("n", "<leader>hd", gs.diffthis, "Diff this")
+      end,
+    },
+  },
+  -- trouble (🚦 A pretty diagnostics, references, telescope results, quickfix and location
+  -- list to help you solve all the trouble your code is causing.)
+  {
+    "folke/trouble.nvim",
+    opts = {}, -- for default options, refer to the configuration section for custom setup.
+    cmd = "Trouble",
+    keys = {
+      {
+        "<leader>xx",
+        "<cmd>Trouble diagnostics toggle<cr>",
+        desc = "Diagnostics (Trouble)",
+      },
+      {
+        "<leader>xX",
+        "<cmd>Trouble diagnostics toggle filter.buf=0<cr>",
+        desc = "Buffer Diagnostics (Trouble)",
+      },
+      {
+        "<leader>cs",
+        "<cmd>Trouble symbols toggle focus=false<cr>",
+        desc = "Symbols (Trouble)",
+      },
+      {
+        "<leader>cl",
+        "<cmd>Trouble lsp toggle focus=false win.position=right<cr>",
+        desc = "LSP Definitions / references / ... (Trouble)",
+      },
+      {
+        "<leader>xL",
+        "<cmd>Trouble loclist toggle<cr>",
+        desc = "Location List (Trouble)",
+      },
+      {
+        "<leader>xQ",
+        "<cmd>Trouble qflist toggle<cr>",
+        desc = "Quickfix List (Trouble)",
+      },
+    },
+  },
+  -- Indent Blankline
+  {
+    "lukas-reineke/indent-blankline.nvim",
+    main = "ibl",
+    ---@module "ibl"
+    ---@type ibl.config
+    opts = {},
+  },
   -- Neo-Tree
   {
     "nvim-neo-tree/neo-tree.nvim",
@@ -68,24 +206,43 @@ require("lazy").setup({
     },
     lazy = false, -- neo-tree will lazily load itself
   },
-  -- Theme
+  -- Themes
+  {
+    "vague-theme/vague.nvim",
+    name = "vague",
+    lazy = false,    -- carga en el arranque
+    priority = 1000, -- carga antes que otros plugins
+    config = function()
+      require("vague").setup({
+        -- todo opcional; estos son los defaults
+        transparent = false,
+        bold = true,
+        italic = true,
+      })
+      vim.cmd.colorscheme("vague")
+    end,
+  },
   {
     "bluz71/vim-moonfly-colors",
     name = "moonfly",
     lazy = false,
     priority = 1000,
+    --[[
     config = function()
       vim.cmd.colorscheme("moonfly")
     end,
+    --]]
   },
   {
     "catppuccin/nvim",
     name = "catppuccin",
     priority = 1000
-    -- config = function()
-    -- require("catppuccin").setup({ flavour = "mocha" })
-    --vim.cmd.colorscheme("catppuccin")
-    -- end,
+    --[[
+    config = function()
+      require("catppuccin").setup({ flavour = "mocha" })
+      vim.cmd.colorscheme("catppuccin")
+    end,
+    ]] --
   },
 
   -- Treesitter: syntax highlighting
@@ -100,7 +257,7 @@ require("lazy").setup({
         "markdown", "markdown_inline",
         "gdscript", "godot_resource", "gdshader",
         "javascript", "typescript", "tsx",
-        "html", "css", "json", "clojure",
+        "html", "css", "json", "clojure", "astro",
       })
       vim.api.nvim_create_autocmd("FileType", {
         callback = function(args)
@@ -283,10 +440,10 @@ require("lazy").setup({
     dependencies = { "nvim-lua/plenary.nvim" },
     opts = { defaults = { preview = { treesitter = false } } },
     keys = {
-      { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Buscar archivos" },
-      { "<leader>fg", "<cmd>Telescope live_grep<cr>",  desc = "Grep en proyecto" },
-      { "<leader>fb", "<cmd>Telescope buffers<cr>",    desc = "Buffers abiertos" },
-      { "<leader>fh", "<cmd>Telescope help_tags<cr>",  desc = "Buscar en ayuda" },
+      { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Search files" },
+      { "<leader>fg", "<cmd>Telescope live_grep<cr>",  desc = "Grep in project" },
+      { "<leader>fb", "<cmd>Telescope buffers<cr>",    desc = "Open buffers" },
+      { "<leader>fh", "<cmd>Telescope help_tags<cr>",  desc = "Search in Help" },
     },
   },
   -- Floating terminal
