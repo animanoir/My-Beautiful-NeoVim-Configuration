@@ -555,3 +555,14 @@ vim.api.nvim_create_autocmd({ "BufWinEnter", "BufNew" }, {
     "Normal:ConjureLogNormal,NormalNC:ConjureLogNormal"
   end,
 })
+
+-- My own Keymaps
+-- Opens a terminal horizontally
+vim.keymap.set("n", "<leader>th",
+  function()
+    vim.cmd("split")
+    vim.cmd("terminal")
+    vim.cmd("resize 10")
+  end, {
+    desc = "Terminal horizontal split"
+  })
