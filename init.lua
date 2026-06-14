@@ -39,7 +39,16 @@ vim.api.nvim_create_autocmd("TermOpen", {
     vim.opt_local.winhighlight = "Normal:TermNormal,NormalNC:TermNormal"
   end,
 })
-
+-- native spell-check
+--[[
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "markdown", "text", "gitcommit" },
+  callback = function()
+    vim.opt_local.spell = false
+    vim.opt_local.spelllang = "es,en_us"
+  end,
+})
+--]]
 --------------------------------------------------------------------------------
 -- 2. BOOTSTRAP LAZY.NVIM (plugin management)
 --------------------------------------------------------------------------------
@@ -562,6 +571,8 @@ require("lazy").setup({
           javascript = { "prettier" },
           typescript = { "prettier" },
           typescriptreact = { "prettier" },
+          markdown = { "prettier" },
+          markdown_jsx = { "prettier" },
         },
         format_on_save = {
           timeout_ms = 2000,
@@ -578,6 +589,7 @@ require("lazy").setup({
 
 vim.filetype.add({
   extension = {
+    mdx = "markdown",
     gd = "gdscript",
     tscn = "gdresource",
     tres = "gdresource",
