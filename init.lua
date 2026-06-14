@@ -2,17 +2,18 @@
 -- 1. General options
 --------------------------------------------------------------------------------
 
+-- This means that the magic key for every command will start with SPACE
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
 local opt = vim.opt
 opt.number = true
-opt.relativenumber = false
+opt.relativenumber = true
 opt.tabstop = 2
 opt.shiftwidth = 2
 opt.expandtab = true
 opt.smartindent = true
-opt.wrap = false
+opt.wrap = true
 opt.cursorline = true
 opt.signcolumn = "yes"
 opt.termguicolors = true
@@ -24,10 +25,10 @@ opt.splitright = true
 opt.undofile = true
 opt.updatetime = 250
 opt.scrolloff = 8
-opt.guicursor = {
-  "n-v-c:block-Cursor/lCursor-blinkwait100-blinkon200-blinkoff150",
-  "i-ci-ve:ver25-Cursor/lCursor-blinkwait300-blinkon200-blinkoff150",
-  "r-cr:hor20-Cursor/lCursor-blinkwait300-blinkon200-blinkoff150",
+vim.opt.guicursor = {
+  "n-v-c:block-Cursor/lCursor-blinkwait30-blinkon30-blinkoff25",
+  "i-ci-ve:ver25-Cursor/lCursor-blinkwait50-blinkon30-blinkoff25",
+  "r-cr:hor20-Cursor/lCursor-blinkwait50-blinkon30-blinkoff25",
   "o:hor50-Cursor/lCursor",
 }
 
@@ -56,7 +57,7 @@ vim.opt.rtp:prepend(lazypath)
 -- 3. PLUGINS
 --------------------------------------------------------------------------------
 require("lazy").setup({
-  -- which.key:
+  -- which.key: Shows me what key combinations I can do when I press SPACE.
   {
     "folke/which-key.nvim",
     event = "VeryLazy",
@@ -64,10 +65,8 @@ require("lazy").setup({
       local wk = require("which-key")
 
       wk.setup({
-        delay = 400, -- ms antes de que aparezca el popup
+        delay = 300,
       })
-
-      -- Nombra los grupos de prefijos que ya tienes
       wk.add({
         { "<leader>f", group = "Search" },
         { "<leader>h", group = "Git" },
@@ -77,7 +76,7 @@ require("lazy").setup({
       })
     end,
   },
-  -- cellular-automaton:
+  -- cellular-automaton: fun.
   {
     "eandrju/cellular-automaton.nvim",
     cmd = "CellularAutomaton",
@@ -86,7 +85,7 @@ require("lazy").setup({
       { "<leader>ml", "<cmd>CellularAutomaton game_of_life<cr>", desc = "Game of Life" },
     },
   },
-  -- gitsigns:
+  -- gitsigns: Tells me via Git about the changes in my code.
   {
     "lewis6991/gitsigns.nvim",
     event = { "BufReadPre", "BufNewFile" },
@@ -106,7 +105,7 @@ require("lazy").setup({
           vim.keymap.set(mode, l, r, { buffer = bufnr, desc = desc })
         end
 
-        -- Navegar entre hunks
+        -- Navigate through hunks.
         map("n", "]h", function()
           if vim.wo.diff then
             vim.cmd.normal({ "]c", bang = true })
@@ -123,14 +122,14 @@ require("lazy").setup({
           end
         end, "Prev hunk")
 
-        -- Acciones sobre hunks
+        -- Actions on hunks
         map("n", "<leader>hs", gs.stage_hunk, "Stage hunk")
         map("n", "<leader>hr", gs.reset_hunk, "Reset hunk")
         map("n", "<leader>hu", gs.undo_stage_hunk, "Undo stage hunk")
         map("n", "<leader>hS", gs.stage_buffer, "Stage buffer completo")
         map("n", "<leader>hR", gs.reset_buffer, "Reset buffer completo")
 
-        -- Visual: stagear/resetear solo líneas seleccionadas
+        -- Visual: stage/reset only selected lines
         map("v", "<leader>hs", function()
           gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
         end, "Stage hunk (visual)")
@@ -138,11 +137,11 @@ require("lazy").setup({
           gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
         end, "Reset hunk (visual)")
 
-        -- Inspección
+        -- Inspection
         map("n", "<leader>hp", gs.preview_hunk, "Preview hunk")
         map("n", "<leader>hb", function()
           gs.blame_line({ full = true })
-        end, "Blame línea completa")
+        end, "Complete blame line")
         map("n", "<leader>hd", gs.diffthis, "Diff this")
       end,
     },
@@ -192,38 +191,28 @@ require("lazy").setup({
     main = "ibl",
     ---@module "ibl"
     ---@type ibl.config
-    opts = {},
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    opts = {
+      scope = {
+        enabled = true,
+        show_start = true,
+        show_end = false,
+      },
+    },
   },
-  -- Neo-Tree
+  -- Neo-Tree: lateral file explorer
   {
     "nvim-neo-tree/neo-tree.nvim",
     branch = "v3.x",
+    keys = { { "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Explorer" } },
     dependencies = {
       "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
-      "nvim-tree/nvim-web-devicons", -- optional, but recommended
-      keys = { { "<leader>e", "<cmd>Neotree toggle<cr>", desc = "Explorador" } },
+      "nvim-tree/nvim-web-devicons",
     },
-    lazy = false, -- neo-tree will lazily load itself
+    lazy = false,
   },
-  -- Themes
-  {
-    "vague-theme/vague.nvim",
-    name = "vague",
-    lazy = false,    -- carga en el arranque
-    priority = 1000, -- carga antes que otros plugins
-    --[[
-    config = function()
-      require("vague").setup({
-        -- todo opcional; estos son los defaults
-        transparent = false,
-        bold = true,
-        italic = true,
-      })
-      vim.cmd.colorscheme("vague")
-    end,
-  ]] --
-  },
+  -- Color-themes
   {
     "bluz71/vim-moonfly-colors",
     name = "moonfly",
@@ -233,18 +222,6 @@ require("lazy").setup({
       vim.cmd.colorscheme("moonfly")
     end,
   },
-  {
-    "catppuccin/nvim",
-    name = "catppuccin",
-    priority = 1000
-    --[[
-    config = function()
-      require("catppuccin").setup({ flavour = "mocha" })
-      vim.cmd.colorscheme("catppuccin")
-    end,
-    ]] --
-  },
-
   -- Treesitter: syntax highlighting
   {
     "nvim-treesitter/nvim-treesitter",
@@ -253,7 +230,7 @@ require("lazy").setup({
     build = ":TSUpdate",
     config = function()
       require("nvim-treesitter").install({
-        "racket", "haskell", "lua",
+        "racket", "lua",
         "markdown", "markdown_inline",
         "gdscript", "godot_resource", "gdshader",
         "javascript", "typescript", "tsx",
@@ -267,16 +244,16 @@ require("lazy").setup({
     end,
   },
 
-  -- LSP
+  -- mason.nvim: LSP
   {
-    "williamboman/mason.nvim",
+    "mason-org/mason.nvim",
     config = function()
       require("mason").setup()
     end,
   },
   {
-    "williamboman/mason-lspconfig.nvim",
-    dependencies = { "williamboman/mason.nvim" },
+    "mason-org/mason-lspconfig.nvim",
+    dependencies = { "mason-org/mason.nvim" },
     config = function()
       require("mason-lspconfig").setup({
         ensure_installed = {
@@ -295,13 +272,33 @@ require("lazy").setup({
   },
   {
     "neovim/nvim-lspconfig",
-    dependencies = { "williamboman/mason-lspconfig.nvim" },
+    dependencies = { "mason-org/mason-lspconfig.nvim" },
     config = function()
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       local ok, cmp_lsp = pcall(require, "cmp_nvim_lsp")
       if ok then
         capabilities = cmp_lsp.default_capabilities(capabilities)
       end
+      -- HTML
+      vim.lsp.config("html", {
+        capabilities = capabilities,
+      })
+
+      -- CSS / SCSS / Less
+      vim.lsp.config("cssls", {
+        capabilities = capabilities,
+      })
+
+      -- Emmet (autocompletado de snippets HTML/CSS tipo div>ul>li*3)
+      vim.lsp.config("emmet_ls", {
+        capabilities = capabilities,
+        filetypes = { "html", "css", "typescriptreact", "javascriptreact" },
+      })
+
+      -- JSON con soporte de esquemas
+      vim.lsp.config("jsonls", {
+        capabilities = capabilities,
+      })
       -- Racket
       vim.lsp.config("racket_langserver", {
         cmd = {
@@ -317,24 +314,12 @@ require("lazy").setup({
       vim.lsp.config("clojure_lsp", {
         capabilities = capabilities,
       })
-
-
       -- Godot
       vim.lsp.config("gdscript", {
         cmd = vim.lsp.rpc.connect("127.0.0.1", 6005),
         filetypes = { "gdscript" },
         root_markers = { "project.godot" },
         capabilities = capabilities,
-      })
-      -- Haskell
-      vim.lsp.config("hls", {
-        capabilities = capabilities,
-        settings = {
-          haskell = {
-            formattingProvider = "ormolu",
-            checkProject = true,
-          },
-        },
       })
       -- Lua
       vim.lsp.config("lua_ls", {
@@ -361,6 +346,10 @@ require("lazy").setup({
         "racket_langserver",
         "ts_ls",
         "eslint",
+        "html",
+        "cssls",
+        "emmet_ls",
+        "jsonls",
       })
 
       -- Keymaps LSP
@@ -369,12 +358,12 @@ require("lazy").setup({
           local map = function(keys, func, desc)
             vim.keymap.set("n", keys, func, { buffer = ev.buf, desc = desc })
           end
-          map("gd", vim.lsp.buf.definition, "Ir a definición")
-          map("gr", vim.lsp.buf.references, "Ver referencias")
-          map("K", vim.lsp.buf.hover, "Documentación hover")
+          map("gd", vim.lsp.buf.definition, "Go to definition")
+          map("gr", vim.lsp.buf.references, "See references")
+          map("K", vim.lsp.buf.hover, "Hover documentation")
           map("<leader>ca", vim.lsp.buf.code_action, "Code action")
-          map("<leader>rn", vim.lsp.buf.rename, "Renombrar símbolo")
-          map("<leader>d", vim.diagnostic.open_float, "Ver diagnóstico")
+          map("<leader>rn", vim.lsp.buf.rename, "Rename symbol")
+          map("<leader>d", vim.diagnostic.open_float, "See diagnostics")
           map("[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, "Last diagnostic")
           map("]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, "Next diagnostic")
         end,
@@ -437,8 +426,23 @@ require("lazy").setup({
   {
     "nvim-telescope/telescope.nvim",
     branch = "0.1.x",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    opts = { defaults = { preview = { treesitter = false } } },
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      {
+        "nvim-telescope/telescope-fzf-native.nvim",
+        build = "make", -- compiles once
+      },
+    },
+    config = function()
+      local telescope = require("telescope")
+
+      telescope.setup({
+        defaults = {
+          preview = { treesitter = false },
+        },
+      })
+      telescope.load_extension("fzf")
+    end,
     keys = {
       { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Search files" },
       { "<leader>fg", "<cmd>Telescope live_grep<cr>",  desc = "Grep in project" },
@@ -466,11 +470,65 @@ require("lazy").setup({
     "nvim-lualine/lualine.nvim",
     opts = {
       options = {
-        theme = "auto",
+        theme                = "moonfly",
+        globalstatus         = true,
+        section_separators   = { left = "", right = "" },
+        component_separators = { left = "│", right = "│" },
+      },
+      sections = {
+        lualine_a = { "mode" },
+        lualine_b = {
+          { "branch", icon = "" },
+          {
+            "diff",
+            symbols = { added = " ", modified = " ", removed = " " },
+            source = function() -- uses gitsigns status dict
+              local gs = vim.b.gitsigns_status_dict
+              if gs then
+                return { added = gs.added, modified = gs.changed, removed = gs.removed }
+              end
+            end,
+          },
+        },
+        lualine_c = {
+          {
+            "filename",
+            path = 1, -- shows relative route
+            symbols = { modified = " ●", readonly = " ", unnamed = "[no name]" },
+          },
+        },
+        lualine_x = {
+          {
+            "diagnostics",
+            sources = { "nvim_lsp" },
+            symbols = { error = " ", warn = " ", info = " ", hint = " " },
+          },
+          "filetype",
+        },
+        lualine_y = { "progress" },
+        lualine_z = { "location" },
       },
     },
   },
+  -- --------------
   -- My own plugins:
+  -- --------------
+  {
+    "windwp/nvim-ts-autotag",
+    ft = { "html", "javascript", "typescript", "javascriptreact", "typescriptreact" },
+    opts = {},
+  },
+  {
+    "folke/todo-comments.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    event = "BufReadPost",
+    opts = {},
+    keys = {
+      { "<leader>ft", "<cmd>TodoTelescope<cr>", desc = "Search TODOs" },
+    },
+  },
+  -- mini.comment: comments using gcc & gc
+  { "echasnovski/mini.comment", event = "VeryLazy", opts = {} },
   {
     "Olical/conjure",
     ft = { "clojure", "fennel", "scheme", "racket" },
@@ -501,7 +559,6 @@ require("lazy").setup({
         formatters_by_ft = {
           gdscript = { "gdformat" },
           lua = { "stylua" },
-          haskell = { "ormolu" },
           javascript = { "prettier" },
           typescript = { "prettier" },
           typescriptreact = { "prettier" },
@@ -555,8 +612,9 @@ vim.api.nvim_create_autocmd({ "BufWinEnter", "BufNew" }, {
     "Normal:ConjureLogNormal,NormalNC:ConjureLogNormal"
   end,
 })
-
+-- ----------------
 -- My own Keymaps
+-- ----------------
 -- Opens a terminal horizontally
 vim.keymap.set("n", "<leader>th",
   function()
