@@ -4,7 +4,7 @@
 
 -- This means that the magic key for every command will start with SPACE
 vim.g.mapleader = " "
-vim.g.maplocalleader = " "
+vim.g.maplocalleader = ","
 
 local opt = vim.opt
 opt.number = true
