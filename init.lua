@@ -66,6 +66,19 @@ vim.opt.rtp:prepend(lazypath)
 -- 3. PLUGINS
 --------------------------------------------------------------------------------
 require("lazy").setup({
+  -- Neogit: plugin to see git graphs and stuff
+  {
+    "NeogitOrg/neogit",
+    lazy = true,
+    dependencies = {
+      "sindrets/diffview.nvim",
+      "nvim-telescope/telescope.nvim",
+    },
+    cmd = "Neogit",
+    keys = {
+      { "<leader>gg", "<cmd>Neogit<cr>", desc = "Show Neogit UI" }
+    }
+  },
   -- which.key: Shows me what key combinations I can do when I press SPACE.
   {
     "folke/which-key.nvim",
