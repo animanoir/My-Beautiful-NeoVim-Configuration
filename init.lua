@@ -70,11 +70,11 @@ require("lazy").setup({
   {
     "davidgranstrom/scnvim",
     ft = "supercollider",
+    dependencies = { "L3MON4D3/LuaSnip" },
     config = function()
       local scnvim = require("scnvim")
       local map = scnvim.map
       local map_expr = scnvim.map_expr
-
       scnvim.setup({
         keymaps = {
           ["<M-e>"]      = map("editor.send_line", { "i", "n" }),
@@ -99,6 +99,11 @@ require("lazy").setup({
           float = { enable = false }, -- post window en split, no flotante
         },
       })
+      -- ② registra los snippets generados en LuaSnip
+      local ok, luasnip = pcall(require, "luasnip")
+      if ok then
+        luasnip.add_snippets("supercollider", require("scnvim.utils").get_snippets())
+      end
     end,
   },
   -- Neogit: plugin to see git graphs and stuff
@@ -436,6 +441,7 @@ require("lazy").setup({
       "hrsh7th/cmp-path",
       "L3MON4D3/LuaSnip",
       "saadparwaiz1/cmp_luasnip",
+      --"hrsh7th/cmp-omni",
     },
     config = function()
       local cmp = require("cmp")
@@ -478,7 +484,6 @@ require("lazy").setup({
       })
     end,
   },
-
   -- Telescope: fuzzy search
   {
     "nvim-telescope/telescope.nvim",
