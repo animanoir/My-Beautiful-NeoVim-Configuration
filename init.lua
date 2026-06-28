@@ -78,10 +78,10 @@ require("lazy").setup({
       scnvim.setup({
         keymaps = {
           ["<M-e>"]      = map("editor.send_line", { "i", "n" }),
-          ["<C-e>"]      = {
-            map("editor.send_block", { "i", "n" }),
-            map("editor.send_selection", "x"),
-          },
+          --["<C-e>"]      = {
+          --map("editor.send_block", { "i", "n" }),
+          --map("editor.send_selection", "x"),
+          --},
           ["<CR>"]       = map("postwin.toggle"),
           ["<M-CR>"]     = map("postwin.toggle", "i"),
           ["<M-L>"]      = map("postwin.clear", { "n", "i" }),
@@ -689,3 +689,34 @@ vim.keymap.set("n", "<leader>th",
   end, {
     desc = "Terminal horizontal split"
   })
+
+-- multiline evaluation of SuperCollider
+-- Evaluación multilínea robusta para SuperCollider
+-- (rodea la detección de bloque/selección rota de scnvim en Neovim 0.12)
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "supercollider",
+  callback = function(args)
+    local buf = args.buf
+
+    -- Visual: evalúa exactamente las líneas seleccionadas
+    vim.keymap.set("x", "<C-e>", function()
+      local s = vim.fn.getpos("v")[2]
+      local e = vim.fn.getpos(".")[2]
+      local l1, l2 = math.min(s, e), math.max(s, e)
+      local lines = vim.api.nvim_buf_get_lines(buf, l1 - 1, l2, false)
+      vim.api.nvim_feedkeys(
+        vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
+      require("scnvim").send(table.concat(lines, "\n"))
+    end, { buffer = buf, desc = "SC: evaluar selección" })
+
+    -- Normal: evalúa el párrafo (bloque entre líneas en blanco) bajo el cursor
+    vim.keymap.set("n", "<C-e>", function()
+      local cur, last = vim.fn.line("."), vim.fn.line("$")
+      local s, e = cur, cur
+      while s > 1 and vim.fn.getline(s - 1):match("%S") do s = s - 1 end
+      while e < last and vim.fn.getline(e + 1):match("%S") do e = e + 1 end
+      local lines = vim.api.nvim_buf_get_lines(buf, s - 1, e, false)
+      require("scnvim").send(table.concat(lines, "\n"))
+    end, { buffer = buf, desc = "SC: evaluar bloque/párrafo" })
+  end,
+})
