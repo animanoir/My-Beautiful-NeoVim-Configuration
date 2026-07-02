@@ -89,17 +89,16 @@ require("lazy").setup({
           ["<F12>"]      = map("sclang.hard_stop", { "n", "x", "i" }),
           ["<leader>st"] = map("sclang.start"),
           ["<leader>sk"] = map("sclang.recompile"),
-          ["<F1>"]       = map_expr("s.boot"), -- arranca el servidor de audio
+          ["<F1>"]       = map_expr("s.boot"),
           ["<F2>"]       = map_expr("s.meter"),
         },
         editor = {
           highlight = { color = "IncSearch" },
         },
         postwin = {
-          float = { enable = false }, -- post window en split, no flotante
+          float = { enable = false },
         },
       })
-      -- ② registra los snippets generados en LuaSnip
       local ok, luasnip = pcall(require, "luasnip")
       if ok then
         luasnip.add_snippets("supercollider", require("scnvim.utils").get_snippets())
@@ -680,6 +679,7 @@ vim.api.nvim_create_autocmd({ "BufWinEnter", "BufNew" }, {
 -- ----------------
 -- My own Keymaps
 -- ----------------
+
 -- Opens a terminal horizontally
 vim.keymap.set("n", "<leader>th",
   function()
@@ -690,15 +690,65 @@ vim.keymap.set("n", "<leader>th",
     desc = "Terminal horizontal split"
   })
 
--- multiline evaluation of SuperCollider
--- Evaluación multilínea robusta para SuperCollider
--- (rodea la detección de bloque/selección rota de scnvim en Neovim 0.12)
+-- multiline evaluation of SuperCollider:
+-- multiline evaluation of SuperCollider:
+
+-- Find the ( ... ) block enclosing the cursor via balanced paren counting.
+-- Returns start/end line numbers, or nil if the cursor isn't inside a block.
+local function sc_block_range()
+  local cur  = vim.fn.line(".")
+  local last = vim.fn.line("$")
+
+  -- 1) Block start: nearest line at/above cursor that begins with "(" at column 0.
+  local s
+  for ln = cur, 1, -1 do
+    if vim.fn.getline(ln):match("^%(") then
+      s = ln; break
+    end
+  end
+  if not s then return nil end
+
+  -- 2) Walk forward counting balanced parens, skipping string/symbol literals,
+  --    char literals ($x) and // line comments, until depth returns to zero.
+  local depth, quote = 0, nil
+  for ln = s, last do
+    local line = vim.fn.getline(ln)
+    local i, len = 1, #line
+    while i <= len do
+      local c = line:sub(i, i)
+      if quote then -- inside "..." or '...'
+        if c == "\\" then
+          i = i + 1 -- skip escaped char
+        elseif c == quote then
+          quote = nil
+        end
+      elseif c == '"' or c == "'" then
+        quote = c -- enter string/symbol literal
+      elseif c == "$" then
+        i = i + 1 -- char literal: next char is data
+      elseif c == "/" and line:sub(i + 1, i + 1) == "/" then
+        break     -- comment to end of line
+      elseif c == "(" then
+        depth = depth + 1
+      elseif c == ")" then
+        depth = depth - 1
+        if depth == 0 then -- matched the block's closing paren
+          if cur >= s and cur <= ln then return s, ln end
+          return nil       -- cursor wasn't inside this block
+        end
+      end
+      i = i + 1
+    end
+  end
+  return nil -- unbalanced
+end
+
 vim.api.nvim_create_autocmd("FileType", {
   pattern = "supercollider",
   callback = function(args)
     local buf = args.buf
 
-    -- Visual: evalúa exactamente las líneas seleccionadas
+    -- Visual: eval exactly the selected lines
     vim.keymap.set("x", "<C-e>", function()
       local s = vim.fn.getpos("v")[2]
       local e = vim.fn.getpos(".")[2]
@@ -709,14 +759,15 @@ vim.api.nvim_create_autocmd("FileType", {
       require("scnvim").send(table.concat(lines, "\n"))
     end, { buffer = buf, desc = "SC: evaluar selección" })
 
-    -- Normal: evalúa el párrafo (bloque entre líneas en blanco) bajo el cursor
+    -- Normal: eval the ( ) block enclosing the cursor (no selection needed)
     vim.keymap.set("n", "<C-e>", function()
-      local cur, last = vim.fn.line("."), vim.fn.line("$")
-      local s, e = cur, cur
-      while s > 1 and vim.fn.getline(s - 1):match("%S") do s = s - 1 end
-      while e < last and vim.fn.getline(e + 1):match("%S") do e = e + 1 end
-      local lines = vim.api.nvim_buf_get_lines(buf, s - 1, e, false)
-      require("scnvim").send(table.concat(lines, "\n"))
-    end, { buffer = buf, desc = "SC: evaluar bloque/párrafo" })
+      local s, e = sc_block_range()
+      if s then
+        local lines = vim.api.nvim_buf_get_lines(buf, s - 1, e, false)
+        require("scnvim").send(table.concat(lines, "\n"))
+      else
+        require("scnvim").send(vim.fn.getline(".")) -- fallback: current line
+      end
+    end, { buffer = buf, desc = "SC: evaluar bloque ()" })
   end,
 })
