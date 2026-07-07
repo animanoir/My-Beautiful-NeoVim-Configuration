@@ -66,6 +66,33 @@ vim.opt.rtp:prepend(lazypath)
 -- 3. PLUGINS
 --------------------------------------------------------------------------------
 require("lazy").setup({
+  -- rainbow-delimiters: colorea {}, [], () por nivel de anidamiento
+  {
+    "hiphish/rainbow-delimiters.nvim",
+    event = { "BufReadPost", "BufNewFile" },
+    config = function()
+      -- Brighter highlight colors for better visibility
+      local highlights = {
+        RainbowDelimiterRed    = "#ff6b6b",
+        RainbowDelimiterYellow = "#ffe066",
+        RainbowDelimiterBlue   = "#4dabf7",
+        RainbowDelimiterOrange = "#ffa94d",
+        RainbowDelimiterGreen  = "#69db7c",
+        RainbowDelimiterViolet = "#da77f2",
+        RainbowDelimiterCyan   = "#66d9e8",
+      }
+      local function set_highlights()
+        for group, color in pairs(highlights) do
+          vim.api.nvim_set_hl(0, group, { fg = color })
+        end
+      end
+      set_highlights()
+      -- Reapply after colorscheme reloads
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = set_highlights })
+
+      require("rainbow-delimiters.setup").setup({})
+    end,
+  },
   -- SuperCollider
   {
     "davidgranstrom/scnvim",
