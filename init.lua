@@ -49,6 +49,16 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 --]]
+
+-- Folding (native Treesitter, Neovim 0.10+)
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+vim.opt.foldtext = ""       -- keep syntax highlighting on the folded line
+vim.opt.foldlevel = 99      -- don't close anything by default
+vim.opt.foldlevelstart = 99 -- start every buffer with all folds open
+vim.opt.foldenable = true   -- folds are computed and available
+
+
 --------------------------------------------------------------------------------
 -- 2. BOOTSTRAP LAZY.NVIM (plugin management)
 --------------------------------------------------------------------------------
