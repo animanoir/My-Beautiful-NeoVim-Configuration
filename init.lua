@@ -6,6 +6,9 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = ","
 
+-- Pin the host interpreter so :UpdateRemotePlugins finds pynvim
+vim.g.python3_host_prog = vim.fn.expand("~/.virtualenvs/neovim/bin/python")
+
 local opt = vim.opt
 opt.number = true
 opt.relativenumber = true
@@ -171,6 +174,7 @@ require("lazy").setup({
         { "<leader>m", group = "Fun" },
         { "<leader>c", group = "Code (LSP)" },
         { "<leader>r", group = "Run / Rename" },
+        { "<leader>j", group = "Jupyter" },
       })
     end,
   },
@@ -328,7 +332,7 @@ require("lazy").setup({
     build = ":TSUpdate",
     config = function()
       require("nvim-treesitter").install({
-        "racket", "lua",
+        "racket", "lua", "python",
         "markdown", "markdown_inline",
         "gdscript", "godot_resource", "gdshader",
         "javascript", "typescript", "tsx",
@@ -608,6 +612,47 @@ require("lazy").setup({
       },
     },
   },
+  -- ------------------------------------------------------------------
+  -- Jupyter: Molten (kernel runner) + image.nvim (inline plots via Kitty)
+  -- ------------------------------------------------------------------
+  {
+    "3rd/image.nvim",
+    build = false, -- skip the luarock build; we use the CLI processor
+    opts = {
+      backend = "kitty",
+      processor = "magick_cli",
+      max_width = 100,
+      max_height = 12,
+      max_height_window_percentage = math.huge, -- required by molten
+      max_width_window_percentage = math.huge,
+      window_overlap_clear_enabled = true,
+      -- neo-tree and floats overlap the buffer; clear images under them
+      window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "neo-tree", "" },
+    },
+  },
+  {
+    "benlubas/molten-nvim",
+    version = "^1.0.0",
+    dependencies = { "3rd/image.nvim" },
+    lazy = false, -- rplugin commands must be registered at startup, not on keypress
+    build = ":UpdateRemotePlugins",
+    init = function()
+      vim.g.molten_image_provider = "image.nvim"
+      vim.g.molten_output_win_max_height = 20
+      vim.g.molten_auto_open_output = false -- keep the buffer readable
+      vim.g.molten_virt_text_output = true  -- show results as virtual text
+      vim.g.molten_wrap_output = true
+    end,
+    keys = {
+      { "<leader>ji", ":MoltenInit<CR>",                  desc = "Init kernel" },
+      { "<leader>jl", ":MoltenEvaluateLine<CR>",          desc = "Eval line" },
+      { "<leader>jc", ":MoltenReevaluateCell<CR>",        desc = "Re-eval cell" },
+      { "<leader>jo", ":noautocmd MoltenEnterOutput<CR>", desc = "Enter output" },
+      { "<leader>jh", ":MoltenHideOutput<CR>",            desc = "Hide output" },
+      { "<leader>jd", ":MoltenDelete<CR>",                desc = "Delete cell" },
+      { "<leader>j",  ":<C-u>MoltenEvaluateVisual<CR>gv", mode = "v",           desc = "Eval selection" },
+    },
+  },
   -- --------------
   -- My own plugins:
   -- --------------
@@ -808,3 +853,36 @@ vim.api.nvim_create_autocmd("FileType", {
     end, { buffer = buf, desc = "SC: evaluar bloque ()" })
   end,
 })
+
+-- ----------------
+-- Jupyter (Molten): evaluate # %% cells
+-- ----------------
+
+-- Find the "# %%" cell enclosing the cursor. Returns first/last line of the body.
+local function molten_cell_range()
+  local cur, last = vim.fn.line("."), vim.fn.line("$")
+  local delim = "^%s*#%s*%%%%"
+  local s = 1
+  for ln = cur, 1, -1 do
+    if vim.fn.getline(ln):match(delim) then
+      s = ln + 1; break
+    end
+  end
+  local e = last
+  for ln = math.max(cur + 1, s), last do
+    if vim.fn.getline(ln):match(delim) then
+      e = ln - 1; break
+    end
+  end
+  return s, math.max(s, e)
+end
+
+vim.keymap.set("n", "<leader>jj", function()
+  local s, e = molten_cell_range()
+  -- MoltenEvaluateVisual reads the '< '> marks, so we must leave visual mode first
+  vim.api.nvim_win_set_cursor(0, { s, 0 })
+  vim.cmd("normal! V")
+  vim.api.nvim_win_set_cursor(0, { e, 0 })
+  vim.cmd("normal! " .. vim.api.nvim_replace_termcodes("<Esc>", true, false, true))
+  vim.cmd("MoltenEvaluateVisual")
+end, { desc = "Molten: eval # %% cell" })
