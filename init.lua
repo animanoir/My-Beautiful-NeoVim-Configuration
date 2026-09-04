@@ -79,6 +79,38 @@ vim.opt.rtp:prepend(lazypath)
 -- 3. PLUGINS
 --------------------------------------------------------------------------------
 require("lazy").setup({
+  {
+    "mrcjkb/rustaceanvim",
+    lazy = false, -- plugin configures itself, no lazy loading
+    ft = { "rust" },
+    init = function()
+      vim.g.rustaceanvim = {
+        server = {
+          on_attach = function(_, bufnr)
+            -- reuse your existing LSP keymaps here
+          end,
+          default_settings = {
+            ["rust-analyzer"] = {
+              cargo = { allFeatures = true },
+              checkOnSave = true,
+              check = { command = "clippy" },
+              inlayHints = { lifetimeElisionHints = { enable = "always" } },
+            },
+          },
+        },
+      }
+    end,
+  },
+  {
+    "saecki/crates.nvim",
+    tag = "stable",
+    event = { "BufRead Cargo.toml" },
+    config = function()
+      require("crates").setup({
+        completion = { cmp = { enabled = true } },
+      })
+    end,
+  },
   -- rainbow-delimiters: colorea {}, [], () por nivel de anidamiento
   {
     "hiphish/rainbow-delimiters.nvim",
